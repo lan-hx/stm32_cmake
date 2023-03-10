@@ -1,0 +1,13 @@
+.vscode/
+.idea/
+.vs/
+.settings/
+cmake-build-*/
+build/
+Debug/
+.mxproject
+*.launch
+CMakeLists_template.txt
+*.cfg
+*build*.bat
+*build*.sh
