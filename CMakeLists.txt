@@ -30,7 +30,7 @@ else()
     message(STATUS "found clang-format at ${CLANG_FORMAT_BIN}")
 endif()
 
-file(GLOB_RECURSE ALL_SOURCE_FILES Core/Inc/*.* Core/Src/*.*)
+file(GLOB_RECURSE ALL_SOURCE_FILES Core/*.c Core/*.h Core/*.cpp)
 if(NOT DEFINED NO_CLANG_FORMAT)
     add_custom_target(clang_format ALL
             COMMAND ${CLANG_FORMAT_BIN} -i
@@ -57,10 +57,8 @@ set(CMAKE_C_CLANG_TIDY ${CLANG_TIDY_BIN} --extra-arg=--sysroot=${STM32_TOOLCHAIN
 set(CMAKE_CXX_CLANG_TIDY ${CLANG_TIDY_BIN} --extra-arg=--sysroot=${STM32_TOOLCHAIN_PATH}/arm-none-eabi -checks=-clang-diagnostic-unused-command-line-argument)
 
 # find library
-if(STM32_USE_EXTERNAL_LIB)
-    find_package(CMSIS COMPONENTS "${CMSIS_COMP_LIST}" REQUIRED)
-    find_package(HAL COMPONENTS "${HAL_COMP_LIST}" REQUIRED)
-endif()
+find_package(CMSIS COMPONENTS "${CMSIS_COMP_LIST}" REQUIRED)
+find_package(HAL COMPONENTS "${HAL_COMP_LIST}" REQUIRED)
 
 #Uncomment for hardware floating point
 #add_compile_definitions(ARM_MATH_CM4;ARM_MATH_MATRIX_CHECK;ARM_MATH_ROUNDING)
@@ -98,17 +96,13 @@ else ()
 endif ()
 
 set(includes Core/Inc Drivers/STM32F1xx_HAL_Driver/Inc/Legacy Drivers/STM32F1xx_HAL_Driver/Inc Drivers/CMSIS/Device/ST/STM32F1xx/Include Drivers/CMSIS/Include)
-if(STM32_USE_EXTERNAL_LIB)
-    list(FILTER includes EXCLUDE REGEX "Drivers/.*")
-endif()
+list(FILTER includes EXCLUDE REGEX "Drivers/.*")
 include_directories(${includes})
 
 add_definitions(-DDEBUG -DUSE_HAL_DRIVER -DSTM32F103xB)
 
 file(GLOB_RECURSE STM32_SOURCE "Core/*.*" "Drivers/*.*")
-if(STM32_USE_EXTERNAL_LIB)
-    list(FILTER STM32_SOURCE EXCLUDE REGEX "(Drivers/.*)|(Core/Startup/.*)|(.*/system_stm32f1xx\\.c)")
-endif()
+list(FILTER STM32_SOURCE EXCLUDE REGEX "Drivers/.*")
 
 set(LINKER_SCRIPT ${CMAKE_SOURCE_DIR}/STM32F103C8TX_FLASH.ld)
 
@@ -119,15 +113,13 @@ add_link_options(-mcpu=cortex-m3 -mthumb -mthumb-interwork)
 #add_executable(${PROJECT_NAME}.elf ${SOURCES} ${LINKER_SCRIPT})
 add_executable(${PROJECT_NAME} ${STM32_SOURCE})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR}/Core/Inc)
-if(STM32_USE_EXTERNAL_LIB)
-    target_link_libraries(${PROJECT_NAME} PRIVATE
-        HAL::STM32::F1::RCC
-        HAL::STM32::F1::GPIO
-        HAL::STM32::F1::CORTEX
-        CMSIS::STM32::F103xB
-        STM32::NoSys
-    )
-endif()
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    HAL::STM32::F1::RCC
+    HAL::STM32::F1::GPIO
+    HAL::STM32::F1::CORTEX
+    CMSIS::STM32::F103xB
+    STM32::NoSys
+)
 
 stm32_add_linker_script(${PROJECT_NAME} PRIVATE ${LINKER_SCRIPT})
 
